@@ -15,12 +15,13 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/user")
-@Tag(name = "User controller for endpoinds")
+@Tag(name = "User-Controller ")
 public class UserController {
 
     private final UserService userService;
 
     @Operation(
+            summary = "Buy subscription",
             description = "In this endpoint we could buy subscription to watch " +
                     "content so we just need to put user id and type of sunscription " +
                     "which required for this user"
@@ -31,6 +32,7 @@ public class UserController {
     }
 
     @Operation(
+            summary = "Get subscription info",
             description = "In this endpoint we could get information about subscription with id"
     )
     @GetMapping("/getSubscription/{id}")
@@ -38,18 +40,28 @@ public class UserController {
         return userService.getSubscription(id);
     }
 
+    @Operation(
+            summary = "Cancel subscription of user",
+            description = "With this endpoint we can cancel the subscription of user with user id")
     @PutMapping("/cancelSubscription/{id}")
     public void cancelSubscription(@PathVariable Long id) {
         userService.cancelSubscription(id);
     }
 
+    @Operation(
+            summary = "Get histories of user",
+            description = "In this endpoint we can get histories of user's watched and ongoing contents")
     @GetMapping("/getHistories/{id}")
     public List<WatchHistoryDto> getAllHistories(@PathVariable Long id) {
         return userService.getAllHistories(id);
     }
 
+    @Operation(
+            summary = "Get Recommendation of content",
+            description = "In this endpoint we can get recommendation of content by putting user id " +
+                    "so by this user id we get contents for this user")
     @GetMapping("/recommendation/{id}")
     public List<ContentDto> recommendation(@PathVariable Long id) {
-       return userService.recommendation(id);
+        return userService.recommendation(id);
     }
 }
