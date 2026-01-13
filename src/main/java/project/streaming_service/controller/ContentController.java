@@ -25,12 +25,12 @@ public class ContentController {
         return contentService.getContent(id);
     }
 
-    @GetMapping("/rate/{id}")
+    @PostMapping("/rate/{id}")
     public void rateContent(@PathVariable Long id, @RequestBody RateContentDto rateContentDto) {
         contentService.rateContent(id, rateContentDto);
     }
 
-    @GetMapping("/watch/{id}")
+    @PostMapping("/watch/{id}")
     public void watchContent(@PathVariable Long id, @RequestBody WatchContentDto watchContentDto) {
         contentService.watchContent(id, watchContentDto);
     }

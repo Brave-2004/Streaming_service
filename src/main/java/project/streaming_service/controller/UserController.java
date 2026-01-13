@@ -1,5 +1,7 @@
 package project.streaming_service.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import project.streaming_service.dto.request.BuySubscriptionDto;
@@ -13,21 +15,30 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/user")
+@Tag(name = "User controller for endpoinds")
 public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/buySubscription/{id}")
+    @Operation(
+            description = "In this endpoint we could buy subscription to watch " +
+                    "content so we just need to put user id and type of sunscription " +
+                    "which required for this user"
+    )
+    @PostMapping("/buySubscription/{id}")
     public void BuySubscription(@PathVariable Long id, @RequestBody BuySubscriptionDto buySubscriptionDto) {
         userService.buySubscription(id, buySubscriptionDto);
     }
 
-    @GetMapping("/getSbscription/{id}")
+    @Operation(
+            description = "In this endpoint we could get information about subscription with id"
+    )
+    @GetMapping("/getSubscription/{id}")
     public SubscriptionDto getSubscription(@PathVariable Long id) {
         return userService.getSubscription(id);
     }
 
-    @GetMapping("/cancelSubscription/{id}")
+    @PutMapping("/cancelSubscription/{id}")
     public void cancelSubscription(@PathVariable Long id) {
         userService.cancelSubscription(id);
     }

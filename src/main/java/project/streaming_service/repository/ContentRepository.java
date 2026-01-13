@@ -1,11 +1,11 @@
 package project.streaming_service.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import project.streaming_service.entity.Content;
 
-import java.awt.print.Pageable;
 import java.util.List;
 
 public interface ContentRepository extends JpaRepository<Content, Long> {

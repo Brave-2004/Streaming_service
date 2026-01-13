@@ -16,7 +16,7 @@ import project.streaming_service.entity.templates.AbsLong;
 public class Rating extends AbsLong {
 
     private Integer rate;
-    @Size(min = 1,max = 10,message = "The rate of the content should be between 1 and 10")
+
     private String comment;
 
     @ManyToOne

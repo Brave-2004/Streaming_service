@@ -3,6 +3,7 @@ package project.streaming_service.service.impl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import project.streaming_service.dto.request.BuySubscriptionDto;
 import project.streaming_service.dto.request.ContentDto;
@@ -19,7 +20,6 @@ import project.streaming_service.repository.ContentRepository;
 import project.streaming_service.repository.UserRepository;
 import project.streaming_service.service.UserService;
 
-import java.awt.print.Pageable;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -35,24 +35,35 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void buySubscription(Long id, BuySubscriptionDto buySubscriptionDto) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isEmpty())
-            throw new RuntimeException("User not found");
+    public void buySubscription(Long id, BuySubscriptionDto dto) {
 
-        User user = optionalUser.get();
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Subscription subscription = user.getSubscription();
 
-        subscription.setTypeEnum(buySubscriptionDto.getTypeEnum());
-        subscription.setStartTime(LocalDate.now());
-        subscription.setEndTime(LocalDate.now().plusMonths(buySubscriptionDto.getDuration()));
+        // FIRST TIME BUY
+        if (subscription == null) {
+            subscription = new Subscription();
+            subscription.setUser(user);
+            subscription.setStartTime(LocalDate.now());
+        }
+
+        // UPDATE / ACTIVATE
+        subscription.setTypeEnum(dto.getTypeEnum());
         subscription.setStatus(SubscriptionStatus.ACTIVE);
+
+        LocalDate start = subscription.getEndTime() != null
+                ? subscription.getEndTime()
+                : LocalDate.now();
+
+        subscription.setEndTime(start.plusMonths(dto.getDuration()));
 
         user.setSubscription(subscription);
 
         userRepository.save(user);
     }
+
 
 
     @Override
@@ -100,9 +111,7 @@ public class UserServiceImpl implements UserService {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isEmpty())
             throw new RuntimeException("User not found");
-
-        User user = optionalUser.get();
-        Pageable pageable = (Pageable) PageRequest.of(0,10);
+        Pageable pageable = PageRequest.of(0,10);
 
         List<Content> recommendedContents = contentRepository.findRecommendedContentByUserId(id, pageable);
 

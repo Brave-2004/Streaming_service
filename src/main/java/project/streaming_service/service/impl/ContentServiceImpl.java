@@ -2,6 +2,7 @@ package project.streaming_service.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import project.streaming_service.dto.request.ContentDto;
 import project.streaming_service.dto.request.RateContentDto;
@@ -13,7 +14,6 @@ import project.streaming_service.repository.RatingRepository;
 import project.streaming_service.repository.UserRepository;
 import project.streaming_service.service.ContentService;
 
-import java.awt.print.Pageable;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Stream;
@@ -117,7 +117,7 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public List<ContentDto> getRecommendedContents(Long id) {
-        Pageable pageable = (Pageable) PageRequest.of(0,10);
+        Pageable pageable = PageRequest.of(0,10);
         List<Content> content = contentRepository.findRecommendedContentByUserId(id, pageable);
 
         Stream<ContentDto> contentDtoStream = content.stream().map(contentMapper::toDto);
