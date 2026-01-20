@@ -4,9 +4,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import project.streaming_service.dto.request.ContentDto;
 import project.streaming_service.entity.Content;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ContentRepository extends JpaRepository<Content, Long> {
     @Query("""
@@ -37,5 +39,12 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
 
 
     Content getById(Long contentId);
+
+    @Query("""
+                SELECT wh.content FROM WatchHistory wh
+                WHERE wh.user.id = :userId
+                  AND wh.progress < wh.content.duration
+            """)
+    List<Content> findIncompleteContentByUserId(@Param("userId") Long userId);
 
 }

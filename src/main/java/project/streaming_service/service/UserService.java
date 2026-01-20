@@ -3,11 +3,21 @@ package project.streaming_service.service;
 import project.streaming_service.dto.request.BuySubscriptionDto;
 import project.streaming_service.dto.request.ContentDto;
 import project.streaming_service.dto.response.SubscriptionDto;
+import project.streaming_service.dto.response.UserDto;
 import project.streaming_service.dto.response.WatchHistoryDto;
 
 import java.util.List;
 
 public interface UserService {
+
+    void create(UserDto userDto);
+
+    void update(Long id, UserDto userDto);
+
+    void delete(Long id);
+
+    List<ContentDto> getWatchingContents(Long id);
+
     void buySubscription(Long id, BuySubscriptionDto buySubscriptionDto);
 
     SubscriptionDto getSubscription(Long id);

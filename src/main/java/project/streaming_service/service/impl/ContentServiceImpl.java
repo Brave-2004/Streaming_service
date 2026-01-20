@@ -1,5 +1,6 @@
 package project.streaming_service.service.impl;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -7,12 +8,14 @@ import org.springframework.stereotype.Service;
 import project.streaming_service.dto.request.ContentDto;
 import project.streaming_service.dto.request.RateContentDto;
 import project.streaming_service.dto.request.WatchContentDto;
+import project.streaming_service.dto.response.CreateActorInContentDTO;
+import project.streaming_service.dto.response.CreateContentDTO;
+import project.streaming_service.dto.response.CreateGenreInContentDTO;
 import project.streaming_service.entity.*;
 import project.streaming_service.mapper.ContentMapper;
-import project.streaming_service.repository.ContentRepository;
-import project.streaming_service.repository.RatingRepository;
-import project.streaming_service.repository.UserRepository;
+import project.streaming_service.repository.*;
 import project.streaming_service.service.ContentService;
+import project.streaming_service.utils.CommonUtil;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -25,12 +28,8 @@ public class ContentServiceImpl implements ContentService {
     private final ContentMapper contentMapper;
     private final UserRepository usersRepository;
     private final RatingRepository ratingRepository;
-
-    @Override
-    public List<ContentDto> getAllContents(Long id) {
-
-        return List.of();
-    }
+    private final ActorRepository actorRepository;
+    private final GenreRepository genreRepository;
 
     @Override
     public ContentDto getContent(Long id) {
@@ -80,19 +79,19 @@ public class ContentServiceImpl implements ContentService {
         if (optionalUser.isEmpty())
             throw new RuntimeException("User not found");
 
-           User user = optionalUser.get();
+        User user = optionalUser.get();
 
-           List<WatchHistory> histories = user.getWatchHistories();
+        List<WatchHistory> histories = user.getWatchHistories();
 
-           for (WatchHistory history : histories){
-               if (history.getContent().equals(content)){
-                   history.setProgress(watchContentDto.getProgressMinutes());
-                   history.setWatchDate(LocalDate.now());
+        for (WatchHistory history : histories) {
+            if (history.getContent().equals(content)) {
+                history.setProgress(watchContentDto.getProgressMinutes());
+                history.setWatchDate(LocalDate.now());
 
-                   usersRepository.save(user);
-               }
-           }
-           WatchHistory watchHistory = new WatchHistory();
+                usersRepository.save(user);
+            }
+        }
+        WatchHistory watchHistory = new WatchHistory();
         watchHistory.setWatchDate(LocalDate.now());
         watchHistory.setContent(content);
         watchHistory.setProgress(watchContentDto.getProgressMinutes());
@@ -103,6 +102,52 @@ public class ContentServiceImpl implements ContentService {
         user.setWatchHistories(histories);
 
         usersRepository.save(user);
+    }
+
+    @Override
+    public void create(CreateContentDTO contentDTO) {
+        Set<Genre> genres = getGenres(contentDTO);
+
+        Set<Actor> actors = getActors(contentDTO);
+
+        Content content = new Content(
+                contentDTO.getName(),
+                contentDTO.getDescription(),
+                contentDTO.getPublishedYear(),
+                contentDTO.getDuration(),
+                contentDTO.getContentType(),
+                contentDTO.getAgeLimit(),
+                contentDTO.getPremiumStatus(),
+                actors,
+                genres,
+                new ArrayList<>(),
+                new ArrayList<>()
+        );
+
+        contentRepository.save(content);
+
+    }
+
+    @Override
+    public void update(CreateContentDTO contentDTO, Long id) {
+        Optional<Content> optionalContent = contentRepository.findById(id);
+
+        if (optionalContent.isEmpty())
+            throw new RuntimeException("Content not found with ID : ");
+
+        Content content = optionalContent.get();
+
+        content.setName(contentDTO.getName());
+        content.setDescription(contentDTO.getDescription());
+        content.setPremiumSatusEnum(contentDTO.getPremiumStatus());
+        content.setDuration(contentDTO.getDuration());
+        content.setContentTypeEnum(contentDTO.getContentType());
+        content.setAgeLimitEnum(contentDTO.getAgeLimit());
+        content.setPremiumSatusEnum(contentDTO.getPremiumStatus());
+        content.setActors(getActors(contentDTO));
+        content.setGenres(getGenres(contentDTO));
+
+        contentRepository.save(content);
     }
 
     @Override
@@ -117,12 +162,108 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public List<ContentDto> getRecommendedContents(Long id) {
-        Pageable pageable = PageRequest.of(0,10);
+        Pageable pageable = PageRequest.of(0, 10);
         List<Content> content = contentRepository.findRecommendedContentByUserId(id, pageable);
 
         Stream<ContentDto> contentDtoStream = content.stream().map(contentMapper::toDto);
 
 
         return contentDtoStream.toList();
+    }
+
+    @Override
+    @Transactional
+    public void addActors(CreateActorInContentDTO actorDTO, Long id) {
+
+        Optional<Content> optionalContent = contentRepository.findById(id);
+
+        if (optionalContent.isEmpty())
+            throw new RuntimeException("Content not found with ID : ");
+
+        Content content = optionalContent.get();
+
+        Set<Actor> actors = CommonUtil.getOrDefault(content.getActors(), new HashSet<>());
+
+        for (Long actorId : actorDTO.getActorIds()) {
+
+            Optional<Actor> optionalActor = actorRepository.findById(actorId);
+
+            if (optionalActor.isEmpty())
+                throw new RuntimeException("Actor not found with ID : ");
+
+            actors.add(optionalActor.get());
+        }
+
+        content.setActors(actors);
+
+        contentRepository.save(content);
+    }
+
+    @Override
+    @Transactional
+    public void addGenres(CreateGenreInContentDTO genreDTO, Long id) {
+        Optional<Content> optionalContent = contentRepository.findById(id);
+
+        if (optionalContent.isEmpty())
+            throw new RuntimeException("Content not found with ID : ");
+
+        Content content = optionalContent.get();
+
+        Set<Genre> genres = CommonUtil.getOrDefault(content.getGenres(), new HashSet<>());
+
+        for (Long genreId : genreDTO.getGenreIds()) {
+
+            Optional<Genre> optionalGenre = genreRepository.findById(genreId);
+
+            if (optionalGenre.isEmpty())
+                throw new RuntimeException("Genre not found with ID : ");
+
+            genres.add(optionalGenre.get());
+        }
+
+        content.setGenres(genres);
+
+    }
+
+    @Override
+    public void delete(Long id) {
+        contentRepository.deleteById(id);
+    }
+
+    private Set<Actor> getActors(CreateContentDTO contentDTO) {
+        Set<Actor> actors = new HashSet<>();
+
+        for (Long id : contentDTO.getActorsId()) {
+
+            Optional<Actor> actorOptional = actorRepository.findById(id);
+
+            if (actorOptional.isEmpty()) {
+
+                throw new RuntimeException("Actor not found with ID : ");
+
+            }
+
+            actors.add(actorOptional.get());
+
+        }
+        return actors;
+    }
+
+    private Set<Genre> getGenres(CreateContentDTO contentDTO) {
+        Set<Genre> genres = new HashSet<>();
+
+        for (Long id : contentDTO.getGenresId()) {
+
+            Optional<Genre> genreOptional = genreRepository.findById(id);
+
+            if (genreOptional.isEmpty()) {
+
+                throw new RuntimeException("Genre not found with ID : ");
+
+            }
+
+            genres.add(genreOptional.get());
+        }
+        return genres;
     }
 }

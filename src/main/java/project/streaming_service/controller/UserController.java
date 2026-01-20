@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import project.streaming_service.dto.request.BuySubscriptionDto;
 import project.streaming_service.dto.request.ContentDto;
 import project.streaming_service.dto.response.SubscriptionDto;
+import project.streaming_service.dto.response.UserDto;
 import project.streaming_service.dto.response.WatchHistoryDto;
 import project.streaming_service.service.UserService;
 
@@ -21,9 +22,46 @@ public class UserController {
     private final UserService userService;
 
     @Operation(
+            summary = "Creating new user",
+            description = "In this endpoint new user created by default FREE subscription"
+    )
+    @PostMapping("/create")
+    public void create(@RequestBody UserDto userDto) {
+        userService.create(userDto);
+    }
+
+    @Operation(
+            summary = "Updating profile of user",
+            description = "in this endpoint we can update profile info of user" +
+                    " by id "
+    )
+    @PutMapping("/update/{id}")
+    public void update(@PathVariable Long id, @RequestBody UserDto userDto) {
+        userService.update(id, userDto);
+    }
+
+    @Operation(
+            summary = "Delete user",
+            description = "In this endpoint we can delete user by user id "
+    )
+    @DeleteMapping("/delete/{id}")
+    public void delete(@PathVariable Long id) {
+        userService.delete(id);
+    }
+
+    @Operation(
+            summary = "Get watched contents",
+            description = "In this endpoint we can get watched contents of user by user id"
+    )
+    @GetMapping("/wathedContents/{id}")
+    public List<ContentDto> getWatchingContents(@PathVariable Long id) {
+        return userService.getWatchingContents(id);
+    }
+
+    @Operation(
             summary = "Buy subscription",
             description = "In this endpoint we could buy subscription to watch " +
-                    "content so we just need to put user id and type of sunscription " +
+                    "content so we just need to put user id and type of subscription " +
                     "which required for this user"
     )
     @PostMapping("/buySubscription/{id}")
